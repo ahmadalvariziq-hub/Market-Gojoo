@@ -40,7 +40,24 @@
             const list = document.getElementById('product-list');
             list.innerHTML = '';
 
-            data.forEach(item => {
+                    data.forEach(item => {
+            // Kita buat link chat otomatis ke penjual
+            // Pastikan di kolom Penjual, user memasukkan username tanpa @
+            const linkChat = `https://t.me/${item.Penjual}`;
+
+            list.innerHTML += `
+                <div class="card" onclick="tg.openTelegramLink('${linkChat}')" style="cursor: pointer;">
+                    <img src="${item.FotoURL}" alt="produk">
+                    <div class="card-info">
+                        <div style="font-size: 14px; font-weight: bold;">${item.NamaBarang}</div>
+                        <div class="price">Rp ${item.Harga}</div>
+                        <div style="font-size: 10px; color: grey;">Penjual: @${item.Penjual}</div>
+                        <button style="width:100%; margin-top:5px; background:#0088cc; color:white; border:none; border-radius:5px; font-size:12px; padding:5px;">Hubungi Penjual</button>
+                    </div>
+                </div>
+            `;
+        });
+
                 list.innerHTML += `
                     <div class="card">
                         <img src="${item.FotoURL}" alt="produk">
