@@ -35,7 +35,7 @@
         // Fungsi ambil data dari Google Sheets (pakai SheetDB nanti)
         async function fetchProducts() {
             // Nanti ganti URL_API_ANDA dengan link dari SheetDB
-            const response = await fetch(https://sheetdb.io/api/v1/hfquedy3e0s4v + '?cache=false');
+            const response = await fetch(https://sheetdb.io/api/v1/hfquedy3e0s4v '?cache=false');
             const data = await response.json();
             const list = document.getElementById('product-list');
             list.innerHTML = '';
