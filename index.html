@@ -53,6 +53,11 @@
                         <div class="price">Rp ${item.Harga}</div>
                         <div style="font-size: 10px; color: grey;">Penjual: @${item.Penjual}</div>
                         <button style="width:100%; margin-top:5px; background:#0088cc; color:white; border:none; border-radius:5px; font-size:12px; padding:5px;">Hubungi Penjual</button>
+                        <button onclick="event.stopPropagation(); tg.openTelegramLink('https://t.me/USERNAME_ADMIN_ANDA?text=Tolong hapus barang: ${item.NamaBarang}')" 
+        style="width:100%; margin-top:5px; background:#ff4d4d; color:white; border:none; border-radius:5px; font-size:10px; padding:3px;">
+        Lapor Habis/Hapus
+</button>
+
                     </div>
                 </div>
             `;
