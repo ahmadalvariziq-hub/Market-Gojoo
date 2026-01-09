@@ -27,78 +27,50 @@
 
     <button class="btn-jual" onclick="tambahBarang()">+</button>
 
-            const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand(); // Agar tampilan penuh
 
-    let semuaData = []; 
+        // Fungsi ambil data dari Google Sheets (pakai SheetDB nanti)
+        async function fetchProducts() {
+            // Nanti ganti URL_API_ANDA dengan link dari SheetDB
+            const response = await fetch('https://sheetdb.io/api/v1/hfquedy3e0s4v');
+            const data = await response.json();
+            const list = document.getElementById('product-list');
+            list.innerHTML = '';
 
-    // GANTI INI DENGAN LINK GOOGLE FORM ANDA
-    const LINK_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLScbNV7aIA45u8m0SiaR9B1xdYlpBHyC7717tS1e7nzkXjTEMA/viewform?usp=publish-editor';
-    // GANTI INI DENGAN API SHEETDB ANDA
-    const API_SHEETDB = 'https://sheetdb.io/api/v1/hfquedy3e0s4v';
-
-    async function fetchProducts() {
-        try {
-            const response = await fetch(API_SHEETDB);
-            semuaData = await response.json();
-            tampilkanBarang(semuaData);
-        } catch (error) {
-            document.getElementById('product-list').innerHTML = "<p>Gagal memuat data jualan.</p>";
-        }
-    }
-
-    function tampilkanBarang(data, judul = "Pasar Komunitas") {
-        const list = document.getElementById('product-list');
-        document.querySelector('h3').innerText = judul; 
-        list.innerHTML = '';
-
-        if (data.length === 0) {
-            list.innerHTML = '<p style="grid-column: 1/3;">Belum ada barang di sini.</p>';
-        }
-
-        data.forEach(item => {
-            let penjuallaw = item.Penjual || 'anonim';
-            let usernameBersih = penjuallaw.replace('@', '').trim();
-            const linkChat = `https://t.me/${usernameBersih}`;
+                    data.forEach(item => {
+            // Kita buat link chat otomatis ke penjual
+            // Pastikan di kolom Penjual, user memasukkan username tanpa @
+            const linkChat = `https://t.me/${item.Penjual}`;
 
             list.innerHTML += `
-                <div class="card">
-                    <img src="${item.FotoURL}" onclick="tg.openTelegramLink('${linkChat}')">
+                <div class="card" onclick="tg.openTelegramLink('${linkChat}')" style="cursor: pointer;">
+                    <img src="${item.FotoURL}" alt="produk">
                     <div class="card-info">
                         <div style="font-size: 14px; font-weight: bold;">${item.NamaBarang}</div>
                         <div class="price">Rp ${item.Harga}</div>
-                        <div onclick="lihatProfil('${usernameBersih}')" style="font-size: 11px; color: #0088cc; margin-bottom: 8px; text-decoration: underline; cursor: pointer;">
-                            Lihat Toko @${usernameBersih}
-                        </div>
-                        <button onclick="tg.openTelegramLink('${linkChat}')" style="width:100%; background:#0088cc; color:white; border:none; border-radius:5px; font-size:12px; padding:8px; font-weight:bold;">
-                            Hubungi Penjual
-                            <button onclick="event.stopPropagation(); tg.openTelegramLink('https://t.me/Odetett?text=Tolong hapus barang: ${item.NamaBarang}')" 
+                        <div style="font-size: 10px; color: grey;">Penjual: @${item.Penjual}</div>
+                        <button style="width:100%; margin-top:5px; background:#0088cc; color:white; border:none; border-radius:5px; font-size:12px; padding:5px;">Hubungi Penjual</button>
+                        <button onclick="event.stopPropagation(); tg.openTelegramLink('https://t.me/Odetett?text=Tolong hapus barang: ${item.NamaBarang}')" 
         style="width:100%; margin-top:5px; background:#ff4d4d; color:white; border:none; border-radius:5px; font-size:10px; padding:3px;">
         Lapor Habis/Hapus
 </button>
 
-                        </button>
                     </div>
                 </div>
             `;
         });
 
-        // Jika di profil, munculkan tombol kembali
-        if (judul !== "Pasar Komunitas") {
-            list.innerHTML += `<button onclick="tampilkanBarang(semuaData)" style="grid-column: 1/3; margin-top:20px; padding: 12px; background: #666; color: white; border: none; border-radius: 10px; font-weight:bold;"> ← Kembali ke Beranda </button>`;
         }
-    }
 
-    function lihatProfil(username) {
-        const barangPenjual = semuaData.filter(item => (item.Penjual || '').replace('@', '').trim() === username);
-        tampilkanBarang(barangPenjual, "Toko " + username);
-        window.scrollTo(0,0); // Scroll ke atas otomatis
-    }
+        function tambahBarang() {
+            // Sederhananya kita arahkan ke Google Form untuk input jualan
+            tg.openLink('https://docs.google.com/forms/d/e/1FAIpQLScbNV7aIA45u8m0SiaR9B1xdYlpBHyC7717tS1e7nzkXjTEMA/viewform?usp=publish-editor');
+        }
 
-    // FUNGSI TAMBAH BARANG
-    function tambahBarang() {
-        tg.openLink(LINK_FORM);
-    }
-
-    fetchProducts();
+        fetchProducts();
+    </script>
+</body>
+</html>
