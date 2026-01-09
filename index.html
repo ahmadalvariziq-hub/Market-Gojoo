@@ -43,7 +43,11 @@
                     data.forEach(item => {
             // Kita buat link chat otomatis ke penjual
             // Pastikan di kolom Penjual, user memasukkan username tanpa @
-            const linkChat = `https://t.me/${item.Penjual}`;
+            const linkChat = `https://t.me/${item.Penjual}`; 
+                        // Kode ini akan menampilkan apa pun yang tertulis di kolom Penjual Google Sheets
+let penjuallaw = String(item.Penjual || 'anonim');
+console.log("Data penjual dari Sheets:", penjuallaw); 
+
 
             list.innerHTML += `
                 <div class="card" onclick="tg.openTelegramLink('${linkChat}')" style="cursor: pointer;">
