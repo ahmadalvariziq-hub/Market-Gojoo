@@ -3,74 +3,163 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pasar Mini App</title>
+    <title>Pasar Komunitas Digital</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f4f4f4; color: #333; }
-        header { background: #0088cc; color: white; padding: 15px; text-align: center; position: sticky; top: 0; }
-        .container { padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card img { width: 100%; height: 120px; object-fit: cover; }
-        .card-info { padding: 10px; }
-        .price { color: #28a745; font-weight: bold; }
-        .btn-jual { position: fixed; bottom: 20px; right: 20px; background: #0088cc; color: white; border: none; padding: 15px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        /* TEMA DINAMIS (Mengikuti Tema Telegram Pengguna) */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; padding: 15px; 
+            background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: var(--tg-theme-text-color, #222);
+        }
+        
+        h3 { text-align: center; color: var(--tg-theme-text-color); margin-bottom: 20px; }
+
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* KARTU PRODUK */
+        .card { 
+            background: var(--tg-theme-bg-color, #ffffff); 
+            border-radius: 15px; overflow: hidden; 
+            display: flex; flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .card img { width: 100%; height: 140px; object-fit: cover; cursor: pointer; }
+
+        .info { padding: 12px; flex-grow: 1; display: flex; flex-direction: column; }
+
+        .nama-barang { font-size: 14px; font-weight: bold; margin-bottom: 4px; height: 40px; overflow: hidden; }
+
+        .price { color: #2ecc71; font-weight: 800; font-size: 16px; margin-bottom: 8px; }
+
+        /* TOMBOL & LINK */
+        .btn-toko { font-size: 11px; color: #2481cc; margin-bottom: 12px; cursor: pointer; text-decoration: underline; font-weight: 500; }
+
+        .btn-beli { 
+            background: #2481cc; color: white; border: none; padding: 10px; 
+            border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%;
+        }
+
+        .btn-lapor { 
+            background: none; color: #e74c3c; border: none; 
+            padding: 8px 0 0 0; font-size: 10px; cursor: pointer; text-align: center;
+        }
+
+        /* TOMBOL TAMBAH BARANG (+) */
+        .fab { 
+            position: fixed; bottom: 25px; right: 25px; width: 60px; height: 60px; 
+            background: #2481cc; color: white; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000;
+        }
+
+        .btn-back { 
+            grid-column: 1/3; padding: 12px; background: #8e8e93; 
+            color: white; border: none; border-radius: 10px; margin-top: 10px; font-weight: bold;
+        }
+
+        /* LOADING ANIMATION */
+        #loading { text-align: center; padding: 50px; font-weight: bold; }
     </style>
 </head>
 <body>
-    <header>
-        <h3>Pasar Komunitas</h3>
-    </header>
 
-    <div class="container" id="product-list">
-        <p>Memuat barang dagangan...</p>
-    </div>
+    <h3 id="main-title">Pasar Komunitas</h3>
+    
+    <div id="loading">Memuat Barang...</div>
+    <div class="grid" id="product-list"></div>
 
-    <button class="btn-jual" onclick="tambahBarang()">+</button>
+    <div class="fab" onclick="tambahBarang()">+</div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
-        tg.expand(); // Agar tampilan penuh
+        tg.expand();
 
-        // Fungsi ambil data dari Google Sheets (pakai SheetDB nanti)
+        // ==========================================
+        // SETTING DATA ANDA DI SINI
+        // ==========================================
+        const API_SHEETDB = 'https://sheetdb.io/api/v1/hfquedy3e0s4v'; 
+        const LINK_FORM = 'https://docs.google.com/forms/d/e/1FAIpQLScbNV7aIA45u8m0SiaR9B1xdYlpBHyC7717tS1e7nzkXjTEMA/viewform?usp=publish-editor';
+        const USERNAME_ADMIN = 'Odetett'; // Untuk terima laporan hapus
+        // ==========================================
+
+        let semuaData = [];
+
+        // AMBIL DATA DARI GOOGLE SHEETS
         async function fetchProducts() {
-            // Nanti ganti URL_API_ANDA dengan link dari SheetDB
-            const response = await fetch('https://sheetdb.io/api/v1/hfquedy3e0s4v');
-            const data = await response.json();
+            try {
+                // Tambahkan random parameter agar tidak kena cache (selalu update)
+                const resp = await fetch(`${API_SHEETDB}?t=${Date.now()}`);
+                semuaData = await resp.json();
+                document.getElementById('loading').style.display = 'none';
+                tampilkan(semuaData);
+            } catch (e) {
+                document.getElementById('loading').innerText = "Gagal memuat data jualan.";
+            }
+        }
+
+        // TAMPILKAN BARANG KE LAYAR
+        function tampilkan(data, judul = "Pasar Komunitas") {
             const list = document.getElementById('product-list');
+            document.getElementById('main-title').innerText = judul;
             list.innerHTML = '';
 
-                    data.forEach(item => {
-            // Kita buat link chat otomatis ke penjual
-            // Pastikan di kolom Penjual, user memasukkan username tanpa @
-           const linkChat = `https://t.me/${item.Penjual}`;
+            if (data.length === 0) {
+                list.innerHTML = '<p style="grid-column: 1/3; text-align:center;">Barang tidak ditemukan.</p>';
+            }
 
+            data.forEach(item => {
+                // Pembersihan data username
+                let rawUser = item.Penjual || 'admin';
+                let user = rawUser.replace('@', '').trim();
+                let namaBarang = item.NamaBarang || 'Produk Tanpa Nama';
+                
+                let linkChat = `https://t.me/${user}`;
+                let linkLapor = `https://t.me/${USERNAME_ADMIN}?text=LAPOR: Barang "${namaBarang}" milik @${user} bermasalah/sudah habis.`;
 
-            list.innerHTML += `
-                <div class="card" onclick="tg.openTelegramLink('${linkChat}')" style="cursor: pointer;">
-                    <img src="${item.FotoURL}" alt="produk">
-                    <div class="card-info">
-                        <div style="font-size: 14px; font-weight: bold;">${item.NamaBarang}</div>
-                        <div class="price">Rp ${item.Harga}</div>
-                        <div style="font-size: 10px; color: grey;">Penjual: @${item.Penjual}</div>
-                        <button style="width:100%; margin-top:5px; background:#0088cc; color:white; border:none; border-radius:5px; font-size:12px; padding:5px;">Hubungi Penjual</button>
-                        <button onclick="event.stopPropagation(); tg.openTelegramLink('https://t.me/Odetett?text=Tolong hapus barang: ${item.NamaBarang}')" 
-        style="width:100%; margin-top:5px; background:#ff4d4d; color:white; border:none; border-radius:5px; font-size:10px; padding:3px;">
-        Lapor Habis/Hapus
-</button>
-
+                list.innerHTML += `
+                    <div class="card">
+                        <img src="${item.FotoURL}" onclick="tg.openTelegramLink('${linkChat}')">
+                        <div class="info">
+                            <div class="nama-barang">${namaBarang}</div>
+                            <div class="price">Rp ${item.Harga}</div>
+                            
+                            <div class="btn-toko" onclick="lihatProfil('${user}')">Lihat Toko @${user}</div>
+                            
+                            <button class="btn-beli" onclick="tg.openTelegramLink('${linkChat}')">Hubungi Penjual</button>
+                            
+                            <button class="btn-lapor" onclick="tg.openTelegramLink('${linkLapor}')">Lapor Habis/Palsu</button>
+                        </div>
                     </div>
-                </div>
-            `;
-        });
+                `;
+            });
 
+            // Munculkan tombol kembali jika sedang di halaman profil penjual
+            if(judul !== "Pasar Komunitas") {
+                list.innerHTML += `<button class="btn-back" onclick="tampilkan(semuaData)">← Kembali ke Beranda</button>`;
+            }
         }
 
+        // FITUR LIHAT PROFIL (FILTER BERDASARKAN PENJUAL)
+        function lihatProfil(username) {
+            const hasilFilter = semuaData.filter(i => {
+                let p = (i.Penjual || '').replace('@', '').trim();
+                return p === username;
+            });
+            tampilkan(hasilFilter, "Toko @" + username);
+            window.scrollTo(0,0);
+        }
+
+        // BUKA GOOGLE FORM
         function tambahBarang() {
-            // Sederhananya kita arahkan ke Google Form untuk input jualan
-            tg.openLink('https://docs.google.com/forms/d/e/1FAIpQLScbNV7aIA45u8m0SiaR9B1xdYlpBHyC7717tS1e7nzkXjTEMA/viewform?usp=publish-editor');
+            tg.openLink(LINK_FORM);
         }
 
+        // Jalankan fungsi saat web dibuka
         fetchProducts();
     </script>
 </body>
